@@ -1,8 +1,11 @@
 package main.java.DatasetUploader;
 
 import java.util.ArrayList;
+import java.lang.Math;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 
-public class Dataset{
+
+public class Dataset {
 
     private String name;
     private ArrayList<Double> magnitudes;
@@ -24,7 +27,7 @@ public class Dataset{
         return ppr;
     }
 
-    public calculatePpr(){
+    public void calculatePpr(){
 
         //-----------------------CALCULATE PPR FROM RELATIVE MAGNITUDE | CONTEXT-----------------
 
@@ -60,14 +63,14 @@ public class Dataset{
         //We only need to measure some of the frequencies to ensure that we have a good sample of data, but for our measurements and analysis to work correctly 
         //we need to have an agreed upon set of frequencies to consider. So first we need to declare a list of preferred frequencies.  
 
-        int[] preferredFrequencies = {20,21,22,24,25,27,28,30,32,34,36,38,40,43,45,48,50,53,56,60,63,67,71,75,80,85,90,95,100,106,112,118,125,132,140,150,
+        double[] preferredFrequencies = {20,21.2,22.4,23.6,25,26.5,28,30,31.5,33.5,35.5,37.5,40,42.5,45,47.5,50,53,56,60,63,67,71,75,80,85,90,95,100,106,112,118,125,132,140,150,
             160,170,180,190,200,212,224,236,250,265,280,300,315,335,355,375,400,425,450,475,500,530,560,600,630,670,710,750,800,850,900,950,1000,1060,1120,1180,
             1250,1320,1400,1500,1600,1700,1800,1900,2000,2120,2240,2360,2500,2650,2800,3000,3150,3350,3550,3750,4000,4250,4500,4750,5000,5300,5600,6000,6300,
             6700,7100,7500,8000,8500,9000,9500,10000,10600,11200,11800,12500,13200,14000,15000,16000,17000,18000,19000,20000};
         
         //Now we can declare what the ideal magnitude for each frequency should be
 
-        float[] harmanAeOe2018 = {4.7,4.84,4.88,4.87,4.86,4.85,4.83,4.8,4.76,4.72,4.66,4.61,4.54,4.47,4.38,4.28,4.16,4.03,3.89,3.74,3.58,3.41,3.23,3.04,
+        double[] harmanAeOe2018 = {4.7,4.84,4.88,4.87,4.86,4.85,4.83,4.8,4.76,4.72,4.66,4.61,4.54,4.47,4.38,4.28,4.16,4.03,3.89,3.74,3.58,3.41,3.23,3.04,
             2.83,2.61,2.38,2.14,1.89,1.61,1.33,1.04,0.75,0.47,0.2,-0.06,-0.32,-0.55,-0.77,-0.96,-1.11,-1.21,-1.25,-1.24,-1.18,-1.08,-0.96,-0.83,-0.7,
             -0.57,-0.46,-0.37,-0.29,-0.23,-0.16,-0.08,0,0.1,0.2,0.3,0.39,0.48,0.55,0.61,0.66,0.69,0.73,0.77,0.84,0.96,1.13,1.36,1.66,2.01,2.44,2.94,3.51,
             4.13,4.79,5.45,6.11,6.73,7.3,7.81,8.25,8.62,8.92,9.16,9.33,9.42,9.41,9.28,9.03,8.68,8.24,7.77,7.29,6.83,6.4,5.97,5.53,5.05,4.52,3.92,3.27,2.58,
@@ -86,7 +89,7 @@ public class Dataset{
             7.313220387,7.377758908,7.43838353,7.495541944,7.549609165,7.60090246,7.659171368,7.714231145,7.766416898,7.824046011,7.882314919,7.937374696,8.006367568,
             8.055157732,8.116715625,8.174702882,8.229511119,8.29404964,8.354674262,8.411832676,8.465899897,8.517193191,8.5754621,8.630521877,8.699514748,8.748304912,
             8.809862805,8.867850063,8.9226583,8.987196821,9.047821442,9.104979856,9.159047078,9.210340372,9.26860928,9.323669057,9.37585481,9.433483923,9.487972109,
-            9.546812609,9.61580548,9.680344001,9.740968623,9.798127037,9.852194258,9.903487553}
+            9.546812609,9.61580548,9.680344001,9.740968623,9.798127037,9.852194258,9.903487553};
 
         //---------------------FINDING THE VARIABLES | STANDARD DEVIATION OF SAMPLE---------------- 
         
@@ -97,21 +100,21 @@ public class Dataset{
         
         //Step 1: Find mean deviation
 
-        ArrayList<Float> deviations;
-        Float totalDeviation;
+        ArrayList<Double> deviations  = new ArrayList<Double>();
+        double totalDeviation = 0;
             
         for(int i = 16; i < 108; i++){
-            Double magnitude = this.magnitudes.get(i);
-            Float target = harmanAeOe2018[i];
-            Float deviation = magnitude - harmanAeOe2018[i];
+            double magnitude = this.magnitudes.get(i);
+            double target = harmanAeOe2018[i];
+            double deviation = magnitude - harmanAeOe2018[i];
             deviations.add(deviation);
             totalDeviation += deviation;
         }
 
-        Float meanDeviation = totalDeviation / deviations.size();
+        double meanDeviation = totalDeviation / deviations.size();
 
         //Step 2: Find each magnitude's deviation from the mean deviation
-        ArrayList<Float> deviationsFromMean;
+        ArrayList<Double> deviationsFromMean = new ArrayList<Double>();
 
         for(int i = 16; i < 108; i++){
             Double magnitude = this.magnitudes.get(i);
@@ -120,18 +123,18 @@ public class Dataset{
         }
 
         //Step 3: Square each deviation from the mean and sum them
-        Float sumOfDeviationsFromMeanSquared;
+        double sumOfDeviationsFromMeanSquared = 0;
 
-        for(Float deviationFromMean : deviationsFromMean){
-            Float squaredDeviationMinusMean = deviationFromMean * deviationFromMean;
+        for(double deviationFromMean : deviationsFromMean){
+            double squaredDeviationMinusMean = deviationFromMean * deviationFromMean;
             sumOfDeviationsFromMeanSquared += squaredDeviationMinusMean;
         }
 
         //Step 4: Find variance
-        Float variance = sumOfDeviationMinusMeanSquared / 93;
+        double variance = sumOfDeviationsFromMeanSquared / 93;
 
         //Step 5: Find square root of the variance
-        Float standardDeviation = Math.sqrt(Double.parseDouble(variance));
+        double standardDeviation = Math.sqrt(variance);
 
         
         //---------------------FINDING THE VARIABLES | SLOPE OF LINEAR REGRESSION OF MAGNITUDES---------------- 
@@ -143,8 +146,8 @@ public class Dataset{
         SimpleRegression regression = new SimpleRegression();
             
         //We have to load our data into the regression before slope can be estimated
-        for(int i = 16; i < (samplesPer - 12); i++){
-            regression.addData(dataset.get(preferredFrequenciesLin[i], dataset.get(i)));
+        for(int i = 16; i < 108; i++){
+            regression.addData(preferredFrequenciesLin[i], this.magnitudes.get(i));
         }
 
         //Now we can calculate our slope

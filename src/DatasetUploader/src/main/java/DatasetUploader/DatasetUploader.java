@@ -1,10 +1,8 @@
 package main.java.DatasetUploader;
 
+import main.java.DatasetUploader.DatasetParser;
 import java.util.ArrayList;
-import java.awt.List;
 import java.io.BufferedReader;
-import java.io.FileReader;
-import com.google.common.collect.lists;
 import static com.mongodb.client.model.Filters.eq;
 import io.github.cdimascio.dotenv.*;
 import org.bson.Document;
@@ -19,7 +17,7 @@ import com.mongodb.client.MongoDatabase;
 
 public class DatasetUploader {
 
-    public static void main(String[] args) {
+    public void uploadDatasets() {
 
 
         //This uploader is a relatively simple program because I'm the only intended user and don't need a user interface and will always
@@ -57,7 +55,7 @@ public class DatasetUploader {
         
         for(Dataset dataset : datasets){
             Document headphoneDataset = new Document("_id", new ObjectId());
-            headphone.append("name", dataset.getName())
+            headphoneDataset.append("name", dataset.getName())
             .append("frequencyResponse", dataset.getMagnitudes())
             .append("ppr", dataset.getPpr());
         }

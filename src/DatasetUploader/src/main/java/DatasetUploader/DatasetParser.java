@@ -1,9 +1,9 @@
 package main.java.DatasetUploader;
 
 import java.io.BufferedReader;
-import java.util.ArrayList;
-import org.apache.commons.math4.stat;
-import main.java.Dataset;
+import java.util.*;
+import java.io.FileReader;
+import main.java.DatasetUploader.Dataset;
 
 public class DatasetParser {
     
@@ -20,53 +20,64 @@ public class DatasetParser {
         ArrayList<String> rows = new ArrayList<String>();
 
         //Read the file line by line
-        try(BufferedReader br = new BufferedReader(new FileReader(headphones.csv))) {
+        try(BufferedReader br = new BufferedReader(new FileReader("headphones.csv"))) {
             String line;
-            while ((line = br.ReadLine()) != null){
+            while ((line = br.readLine()) != null){
                 //Send each line to ArrayList<String> rows
                 rows.add(line);
             }
+            br.close();
+        } catch (Exception e) {
+            System.out.println("Can't find headphones.csv, exception: " + e); 
         }
 
         //-----------------------------------CLEAN CSV---------------------------------
 
-        //Each row in rows still has its newline characters and we want those rows as lists of values to sort them into their columns
+        //Each row in rows still just a string delimited with commas and with newline characters at the end, let's break them down
+        //some more into arrays of values without commas or newline characters
 
-        ArrayList<List> processedRows = new ArrayList<List>();
+        ArrayList<String[]> processedRows = new ArrayList<String[]>();
 
         for(String row : rows){
-            String cleanRow = row.replace("a","");
-            String[] splitRow = cleanRow.split("\r\n");
-            processedRows.add(processedRows.asList(splitRow));
+            ArrayList<String> rowAsList = new ArrayList<String>();
+            String cleanRow = row.replace("\r\n","");
+            String[] rowAsArray = cleanRow.split(",");
+            processedRows.add(rowAsArray);
         }
 
         //By convention this data will have one title per column. We can check the number of values in the first row and subtract one 
         //(to account for our reference frequency column) to figure out how many datasets are contained within the file
 
-        ArrayList firstRow = processedRows.get(0);
-        int columnNumber = firstRow.size() - 1;
+        String[] firstRow = processedRows.get(0);
+        int columnNumber = firstRow.length - 1;
 
         //------------------------SORT DATA INTO DATASETS BY COLUMN-------------------
 
-        //Now we know that we can iterate through every row and take out every datapoint for a given column (dataset) in sequence 
-        //creating a list for each dataset with its values stored in order
+        //Now we know how many datasets we have we can move through through every row and sort each datum by column into a sequential
+        //to reconstruct the CSV into a format that we can handle
 
-        ArrayList<List> datasets = new ArrayList<List>();
+        ArrayList<ArrayList<String>> datasets = new ArrayList<ArrayList<String>>();
 
-        for(int i; i < columnNumber; i++){
+        for(int i = 0; i < columnNumber; i++){
             
             ArrayList<String> dataset = new ArrayList<String>();
             
-            for(int j; j < 121; j++){
-                ArrayList row = processedRows.get(j);
-                String value = row.get(i);
+            for(int j = 0; j < 121; j++){
+                String[] row = processedRows.get(j);
+                String value = row[i];
                 dataset.add(value);
             }
 
             datasets.add(dataset);   
         }
 
+        //Now our datasets are stored as ArrayLists of discrete values, and those datasets are stored in an ArrayList. 
+
         //-----------------------------------PROCESS DATA--------------------------------
+
+        //We have our datasets stored but lists of lists are inconvenient and syntatically unclear to work with, so let's turn them into Dataset
+        //objects as defined in our Dataset class. Before we create our dataset object we also want to do a little processing to make sure that
+        //we're just inserting the data we actually want
 
         //Measurements of transducer performance are made by playing a signal through that transducer and measuring what comes out with a microphone. Typically
         //that output is presented as absolute absolute amplitude (how loud each sample the mic when that sample played). We're analysing the pattern of the
@@ -74,9 +85,6 @@ public class DatasetParser {
         //500Hz, so the 500Hz sample in any dataset we store should be moved to be 0dBSPL, and every other magnitude measurement should be a measure of how much
         //louder or quieter a sample is compared to that point. In order to do that we have to take the magnitude measurement of the 500Hz sample and subtract it
         //from every sample in the set, including the 500Hz sample. 
-
-        //Also, storing our data in Lists of Strings isn't how we actually want to imagine them or conducive to what we want to do with them, so let's turn this
-        //into a list of Dataset objects
 
         ArrayList<Dataset> datasetObjects = new ArrayList<Dataset>();
 
@@ -86,7 +94,7 @@ public class DatasetParser {
             String name = dataset.get(0);
 
             //Now let's sort all of the following values into a list of magnitudes
-            ArrayList<Double> magnitudes;
+            ArrayList<Double> magnitudes = new ArrayList<Double>();
 
             //Let's subtract our unwanted gain in the process
             //Sample 56 is always 500Hz in our process, so we want the 56th String in our list (0 is the measurement title, so we want value 56 not value 55)
