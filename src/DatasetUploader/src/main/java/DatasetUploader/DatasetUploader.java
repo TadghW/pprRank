@@ -58,6 +58,7 @@ public class DatasetUploader {
             headphoneDataset.append("name", dataset.getName())
             .append("frequencyResponse", dataset.getMagnitudes())
             .append("ppr", dataset.getPpr());
+            documents.add(headphoneDataset);
         }
 
         //Upload documents to the database
