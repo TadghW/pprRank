@@ -3,6 +3,7 @@ package main.java.DatasetUploader;
 import java.util.ArrayList;
 import java.lang.Math;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
+import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 
 
 public class Dataset {
@@ -91,53 +92,34 @@ public class Dataset {
             8.809862805,8.867850063,8.9226583,8.987196821,9.047821442,9.104979856,9.159047078,9.210340372,9.26860928,9.323669057,9.37585481,9.433483923,9.487972109,
             9.546812609,9.61580548,9.680344001,9.740968623,9.798127037,9.852194258,9.903487553};
 
-        //---------------------FINDING THE VARIABLES | STANDARD DEVIATION OF SAMPLE---------------- 
+        //---------------------FINDING THE VARIABLES | STANDARD DEVIATION OF ERROR---------------- 
         
         //Calculating PPR isn't all that complicated in and of itself, but we do need to calculate two important variables before we can begin. The first of these
         //is essentially a refined measure of how much the samples in the dataset deviate from Harman's AE OE target. To get standard deviation you need to find
         //the mean deviation, find each sample's deviation from that mean, square them, sum the squares, divide them by the sample size, and then find the square 
         //root of the remaining figure. 
-        
-        //Step 1: Find mean deviation
 
-        ArrayList<Double> deviations  = new ArrayList<Double>();
-        double totalDeviation = 0;
-            
-        for(int i = 16; i < 108; i++){
+        //You could implement this yourself but Apache Commons Maths3 provides a robust and efficient statistics module that I'm going to be using for simple regression
+        //anyway so let's use their STDEV function as well.
+
+        //For both STDEV and Simple Regression we only want to evaluate preferred frequencies 16 through 108 (50Hz to 10KHz) so let's construct an array for our values
+        double[] errorCurve = new double[93];
+
+        for(int i = 16; i < 109; i++){
             double magnitude = this.magnitudes.get(i);
             double target = harmanAeOe2018[i];
-            double deviation = magnitude - harmanAeOe2018[i];
-            deviations.add(deviation);
-            totalDeviation += deviation;
+            double error = magnitude - target;
+            errorCurve[i-16] = error;
         }
 
-        double meanDeviation = totalDeviation / deviations.size();
+        //Technically this is a sample, commons.math3.stat lets enable bias corrections with a boolean
+        StandardDeviation standardDeviation = new StandardDeviation(true);
 
-        //Step 2: Find each magnitude's deviation from the mean deviation
-        ArrayList<Double> deviationsFromMean = new ArrayList<Double>();
-
-        for(int i = 16; i < 108; i++){
-            Double magnitude = this.magnitudes.get(i);
-            Double deviationFromMean = magnitude - meanDeviation;
-            deviationsFromMean.add(deviationFromMean);
-        }
-
-        //Step 3: Square each deviation from the mean and sum them
-        double sumOfDeviationsFromMeanSquared = 0;
-
-        for(double deviationFromMean : deviationsFromMean){
-            double squaredDeviationMinusMean = deviationFromMean * deviationFromMean;
-            sumOfDeviationsFromMeanSquared += squaredDeviationMinusMean;
-        }
-
-        //Step 4: Find variance
-        double variance = sumOfDeviationsFromMeanSquared / 93;
-
-        //Step 5: Find square root of the variance
-        double standardDeviation = Math.sqrt(variance);
-
+        Double headphoneStdev = standardDeviation.evaluate(errorCurve);
         
-        //---------------------FINDING THE VARIABLES | SLOPE OF LINEAR REGRESSION OF MAGNITUDES---------------- 
+        System.out.println("Standard Deviation of Error of " + this.name + " = " + headphoneStdev);
+        
+        //---------------------FINDING THE VARIABLES | SLOPE OF LINEAR REGRESSION OF ERROR---------------- 
 
         //Ok, now that we have our standard deviation calculated we need to find the slope of the linear equation that describes
         //the curve of our dataset's deviancy from our ATF. I use Apache Commons Math 4's statistics package here because it's 
@@ -146,21 +128,29 @@ public class Dataset {
         SimpleRegression regression = new SimpleRegression();
             
         //We have to load our data into the regression before slope can be estimated
-        for(int i = 16; i < 108; i++){
-            regression.addData(preferredFrequenciesLin[i], this.magnitudes.get(i));
+        for(int i = 16; i < 109; i++){
+            regression.addData(preferredFrequenciesLin[i], errorCurve[i-16]);
         }
 
         //Now we can calculate our slope
         Double slope = regression.getSlope();
-
-        //Technically we need the absolute value of the slope so
         Double absSlope = Math.abs(slope);
 
+        System.out.println("Slope of Error of " + this.name + " = " + slope);
+
         //Now that we have our two variables, calculating PPR is simple
-        Double ppr = 114.490443008238 - (12.6217151040598 * standardDeviation) - (15.5163857197367 * absSlope);
+        Double ppr = 114.490443008238 - (12.6217151040598 * headphoneStdev) - (15.5163857197367 * absSlope);
+
+        Double pprRounded = Math.round(ppr*100.0)/100.0;
+
+        System.out.println("Which makes the PPR of " + this.name + " = " + ppr);
 
         //Now we know our dataset's ppr!
         this.ppr = ppr;
+    }
+
+    public String toString(){
+        return this.name + "\r\n" + this.magnitudes.toString() + "\r\n" + this.ppr;
     }
 
 

@@ -17,7 +17,7 @@ import com.mongodb.client.MongoDatabase;
 
 public class DatasetUploader {
 
-    public void uploadDatasets() {
+    public static void main(String[] args) {
 
 
         //This uploader is a relatively simple program because I'm the only intended user and don't need a user interface and will always

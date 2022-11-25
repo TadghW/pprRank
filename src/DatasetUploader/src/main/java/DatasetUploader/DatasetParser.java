@@ -31,6 +31,12 @@ public class DatasetParser {
             System.out.println("Can't find headphones.csv, exception: " + e); 
         }
 
+        System.out.println("File reads as follows: ");
+
+        for(String row : rows){
+            System.out.println(row);
+        }
+
         //-----------------------------------CLEAN CSV---------------------------------
 
         //Each row in rows still just a string delimited with commas and with newline characters at the end, let's break them down
@@ -45,20 +51,27 @@ public class DatasetParser {
             processedRows.add(rowAsArray);
         }
 
+        System.out.println("Data in file parsed to points as follows: ");
+
+        for(String row : rows){
+            System.out.println(row);
+        }
+
+
+        //------------------------SORT DATA INTO DATASETS BY COLUMN-------------------
+
         //By convention this data will have one title per column. We can check the number of values in the first row and subtract one 
         //(to account for our reference frequency column) to figure out how many datasets are contained within the file
 
         String[] firstRow = processedRows.get(0);
         int columnNumber = firstRow.length - 1;
 
-        //------------------------SORT DATA INTO DATASETS BY COLUMN-------------------
-
         //Now we know how many datasets we have we can move through through every row and sort each datum by column into a sequential
         //to reconstruct the CSV into a format that we can handle
 
         ArrayList<ArrayList<String>> datasets = new ArrayList<ArrayList<String>>();
 
-        for(int i = 0; i < columnNumber; i++){
+        for(int i = 1; i < columnNumber; i++){
             
             ArrayList<String> dataset = new ArrayList<String>();
             
@@ -69,6 +82,12 @@ public class DatasetParser {
             }
 
             datasets.add(dataset);   
+        }
+
+        System.out.println("Detected datasets are as follows: ");
+
+        for(ArrayList<String> dataset : datasets){
+            System.out.println(dataset.toString());
         }
 
         //Now our datasets are stored as ArrayLists of discrete values, and those datasets are stored in an ArrayList. 
@@ -101,15 +120,18 @@ public class DatasetParser {
             Double MagnitudeOf500Hz = Double.parseDouble(dataset.get(56));
 
             for(int i = 1; i < dataset.size(); i++) {
-                //We'll need to parse the existing values as Doubles
+                //We'll need to parse the existing values, which are Strings, as Doubles
                 Double magnitudeWithGain = Double.parseDouble(dataset.get(i));
-                //Now let's remove the gain before committing it to our new list
+                //Now let's remove the unwanted gain
                 Double relativeMagnitude = magnitudeWithGain - MagnitudeOf500Hz;
-                magnitudes.add(relativeMagnitude);
+                //And round the result to stop us uploading silly values with floating point error to the db
+                Double roundedRelativeMagnitude = Math.round(relativeMagnitude * 100.0) / 100.0;
+                magnitudes.add(roundedRelativeMagnitude);
             }
 
             //With that done we can create a Dataset object and populate it with the data we have so far (name and relative magnitude)
             Dataset dataset2 = new Dataset(name, magnitudes);
+            datasetObjects.add(dataset2);
         }
 
         //-----------------------------------CALCULATING PPR-------------------------------
@@ -120,6 +142,12 @@ public class DatasetParser {
             
         for(Dataset dataset : datasetObjects){
             dataset.calculatePpr();
+        }
+
+        System.out.println("Datasets are as follows: ");
+        
+        for(Dataset dataset : datasetObjects){
+            System.out.println(dataset.toString());
         }
 
         //All done! Our datasets have been turned from CSV of absolute magnitudes into all the data we need and can now be uploaded.
