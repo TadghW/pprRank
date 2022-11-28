@@ -2,3 +2,4 @@
 target/
 *.xml
 *.code-workspace
+*.csv

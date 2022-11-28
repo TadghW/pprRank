@@ -1,9 +1,12 @@
 package main.java.pprrankserver;
 
 import main.java.pprrankserver.DatasetPopulator;
-import main.java.pprrankserver.ClientHandler; 
+import main.java.pprrankserver.Dataset;
 import java.net.ServerSocket;
+import main.java.pprrankserver.ClientHandler; 
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 class PprRankServer {
 
@@ -13,7 +16,8 @@ class PprRankServer {
 
     private static DatasetPopulator datasetPopulator = new DatasetPopulator();
 
-    protected static String[] headphoneList = datasetPopulator.populate();
+    protected static Dataset[] headphoneList = datasetPopulator.populate();
+
 
     private static int threadCount = 0;
 
@@ -43,6 +47,12 @@ class PprRankServer {
             }
         } catch (Exception e){
             System.out.println("\r\nFailed to launch the server, exception: " + e + "\r\n");
+        }
+
+        System.out.println("Global resource filled and active. Currently storing the following datasets: ");
+        
+        for(Dataset dataset : headphoneList){
+            System.out.println(dataset.toString());
         }
 
     }

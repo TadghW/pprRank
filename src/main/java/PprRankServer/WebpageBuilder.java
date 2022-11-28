@@ -1,15 +1,35 @@
 package main.java.pprrankserver;
+import main.java.pprrankserver.*;
+import java.util.Comparator;
+import java.util.Arrays;
+
+import com.mongodb.client.MongoClient;
 
 public class WebpageBuilder {
 
-    private MongoClient mongoClient;
+    public String build(){
 
-    WebpageBuilder(MongoClient mongoClient){
-        this.mongoClient = mongoClient;
-    }
+        String response = "PprRank v.0.1.0 <- https://github.com/TadghW/pprRank \r\n";
 
-    public String build(String requestSummary){
-        return requestSummary;
+        Dataset[] datasetsSorted = PprRankServer.headphoneList;        
+
+        Arrays.sort(datasetsSorted, new Comparator<Dataset>(){
+            public int compare(Dataset d1, Dataset d2){
+                if(d1.getPpr() > d2.getPpr()){
+                    return -1;
+                }
+                if(d1.getPpr() < d2.getPpr()){
+                    return 1;
+                }
+                    return 0;
+            }
+        });
+
+        for(Dataset dataset : datasetsSorted){
+            response +=  dataset.toString() + "\r\n";
+        }
+
+        return response;
     }
     
 }
