@@ -21,7 +21,7 @@ public class ClientHandler implements Runnable {
 
     public void run(){
         
-        System.out.println("\r\nClient " + client.toString() + " connected and passed to handler on thread " + threadNo);
+        System.out.println("Client " + client.toString() + " connected and passed to handler on thread " + threadNo);
                 
         try {
             
@@ -50,6 +50,8 @@ public class ClientHandler implements Runnable {
             outputStream.write(("HTTP/1.1 200 OK\r\n").getBytes());
             outputStream.write(("\r\n").getBytes());
             outputStream.write((webpageBuilder.build()).getBytes());
+
+            System.out.println("Response issued to " + client.toString() + " by " + threadNo);
             
             //Once our response is written to the output stream we can flush it, and close it to indicate to the client that the message is over and no further responses are coming
             outputStream.flush();

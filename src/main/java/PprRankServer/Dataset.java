@@ -5,19 +5,19 @@ import java.util.Objects;
 
 public class Dataset {
 
-    private ObjectId id;
+    private String id;
     private String name;
     private double[] magnitudes;
     private double ppr;
 
-    public Dataset(ObjectId id, String name, double[] magnitudes, Double ppr){
+    public Dataset(String id, String name, double[] magnitudes, Double ppr){
         this.id = id;
         this.name = name;
         this.magnitudes = magnitudes;
         this.ppr = ppr;
     }
     
-    public ObjectId getId() {
+    public String getId() {
         return id;
     }
 
@@ -32,7 +32,7 @@ public class Dataset {
         return ppr;
     }
 
-    public void setId(ObjectId id){
+    public void setId(String id){
         this.id = id;
     }
 

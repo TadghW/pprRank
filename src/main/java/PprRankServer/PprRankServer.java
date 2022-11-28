@@ -28,7 +28,7 @@ class PprRankServer {
 
         try (ServerSocket serverSocket = new ServerSocket(8080)) {
             
-            System.out.println ("\r\nServer started..\r\nListening for messages...\r\n");
+            System.out.println ("Server started..\r\nListening for messages...");
 
             Boolean shouldBeRunning = true; 
             while (shouldBeRunning) {

@@ -10,7 +10,7 @@ public class BSONReader {
 
     public Dataset convertToDataset(Document document){
 
-        ObjectId id = document.getObjectId("id");
+        String id = document.get("_id").toString();
         String name = document.getString("name");
         ArrayList<Object> magnitudes = (ArrayList<Object>) document.get("frequencyResponse");
         double ppr = document.getDouble("ppr");
