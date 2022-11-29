@@ -19,6 +19,7 @@ import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.ConnectionString;
 import java.util.ArrayList;
 import main.java.pprrankserver.Dataset;
+import java.lang.System.*;
 
 public class DatasetPopulator {
 
@@ -26,7 +27,11 @@ public class DatasetPopulator {
 
     public DatasetPopulator(){
 
-        //The connection string required to connect to my database is stored in an .env file at my project root and is ignored by git for security 
+        System.out.println("pprRank v0.2.0 <- 29/11/22");
+
+        //---------------------------------------ONLY USED WHEN TESTING IN DEVELOPMENT--------------------------------
+
+        /* //The connection string required to connect to my database is stored in an .env file at my project root and is ignored by git for security 
         //purposes. If you want to recreate this project you'll need to create a environment.env at the root of your project folder including the
         //value pair MONGODB_URI= and whatever your connection string is
 
@@ -34,12 +39,22 @@ public class DatasetPopulator {
 
         //In a production you should store your environment variables in the host environment rather than in a .env file!
 
-        Dotenv dotenv = Dotenv.configure()
-        .directory("src/main/resources")
-        .filename("environment.env")
-        .load();
+        //Dotenv dotenv = Dotenv.configure()
+        //.directory("src/main/resources")
+        //.filename("environment.env")
+        //.load();
 
-        String connectionString = dotenv.get("MONGODB_URI");
+        //String connectionString = dotenv.get("MONGODB_URI");*/
+
+        //-----------------------------------------USED FOR DEPLOYMENT IN CONTAINER------------------------------------
+
+        //When I build my container image with docker I pass it my .env file and the MONGODB_URI variable as parameters to be set up as container-wide
+        //environment variables. Doing it this way means I never have to hardcode the value in a way that exposes our DB Secrets.
+
+        //Example: docker build --secret id=environment,src=pprRank/environment.env --tag pprrank-latest:tag pprRank
+
+        String connectionString = System.getenv("MONGODB_URI"); 
+        System.out.println("connectionString = " + connectionString);
 
         //It's noteworthy that mongodb uses a client settings builder for when you're attempting a connection with a greater number of parameters,
         //something I experimented with in particular when using Mongo's Codec / Codec Registry system for converting documents to Dataset classes

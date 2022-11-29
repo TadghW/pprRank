@@ -9,7 +9,7 @@ public class WebpageBuilder {
 
     public String build(){
 
-        String response = "PprRank v.0.1.0 <- https://github.com/TadghW/pprRank \r\n";
+        String response = "PprRank v.0.2.0 <- https://github.com/TadghW/pprRank <br>";
 
         Dataset[] datasetsSorted = PprRankServer.headphoneList;        
 
@@ -26,7 +26,7 @@ public class WebpageBuilder {
         });
 
         for(Dataset dataset : datasetsSorted){
-            response +=  dataset.toString() + "\r\n";
+            response +=  dataset.toString() + "<br>";
         }
 
         return response;
