@@ -2,96 +2,134 @@ package main.java.DatasetUploader;
 
 import java.io.BufferedReader;
 import java.util.*;
+import java.util.stream.Stream;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.io.FileReader;
 import main.java.DatasetUploader.Dataset;
 
 public class DatasetParser {
     
-        //This is class exists to upload data compiled by hand onto spreadsheets into my database. For another application I once 
-        //designed a complex parsing engine that would accept datasets generated straight from all common measurement software but
-        //it was a total pain and for an application designed for public interaction. As I'm the only contributor to this database,
-        //I'll use a standardised spreadsheet format to upload the data and use that consistency to make a simple ingest method
-        //instead
+        //This is class exists to upload data compiled by hand into a specific collection of folders and files into my database.
+        //Another option would have been to designed and build a dataset parsing engine that was structure agnostic and which would
+        //simply intake any dataset straight from the usual measurement software packages - but this approach allows me to include
+        //taxonomical data in the directory structure and works in accordance with the system used by the main source of data I've
+        //integrated into the app so far.
 
-    public ArrayList<Dataset> parse(){
+    public void parse(){
 
-        //------------------------------------READ CSV-------------------------------
+        //First let's search our root directory for a folder named "datasets" and log all of the .txt files within
 
-        ArrayList<String> rows = new ArrayList<String>();
+        System.out.println("Searching datasets directory...");
 
-        //Read the file line by line
-        try(BufferedReader br = new BufferedReader(new FileReader("headphones.csv"))) {
-            String line;
-            while ((line = br.readLine()) != null){
-                //Send each line to ArrayList<String> rows
-                rows.add(line);
-            }
-            br.close();
+        ArrayList<Path> paths = new ArrayList<Path>();
+
+        try(Stream<Path> stream = Files.walk(Paths.get("datasets"))){
+            System.out.println("Datasets discovered:");
+            //Although expensive compared to .toString().endsWith(), PathMatcher doesn't risk returning NullPointerExceptions
+            PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:**.txt");
+            stream.filter(f -> matcher.matches(f)).peek(System.out::println).forEach(paths::add);
         } catch (Exception e) {
-            System.out.println("Can't find headphones.csv, exception: " + e); 
+            System.out.println("Panic! " + e);
         }
 
-        System.out.println("File reads as follows: ");
+        //Now that we have a list of valid paths let's create a list of the datasets we plan on ingesting. First we need a way to store
+        //important information we can assess from filename and path - let's create an object to bundle that information
 
-        for(String row : rows){
-            System.out.println(row);
-        }
+        ArrayList<Dataset> datasets = new ArrayList<Dataset>();
 
-        //-----------------------------------CLEAN CSV---------------------------------
+        for(Path path : paths){
 
-        //Each row in rows still just a string delimited with commas and with newline characters at the end, let's break them down
-        //some more into arrays of values without commas or newline characters
-
-        ArrayList<String[]> processedRows = new ArrayList<String[]>();
-
-        for(String row : rows){
-            ArrayList<String> rowAsList = new ArrayList<String>();
-            String cleanRow = row.replace("\r\n","");
-            String[] rowAsArray = cleanRow.split(",");
-            processedRows.add(rowAsArray);
-        }
-
-        System.out.println("Data in file parsed to points as follows: ");
-
-        for(String row : rows){
-            System.out.println(row);
-        }
-
-
-        //------------------------SORT DATA INTO DATASETS BY COLUMN-------------------
-
-        //By convention this data will have one title per column. We can check the number of values in the first row and subtract one 
-        //(to account for our reference frequency column) to figure out how many datasets are contained within the file
-
-        String[] firstRow = processedRows.get(0);
-        int columnNumber = firstRow.length - 1;
-
-        //Now we know how many datasets we have we can move through through every row and sort each datum by column into a sequential
-        //to reconstruct the CSV into a format that we can handle
-
-        ArrayList<ArrayList<String>> datasets = new ArrayList<ArrayList<String>>();
-
-        for(int i = 1; i < columnNumber; i++){
+            //We can extract the data we need about each file from its filepath
+            //Format: datasets\Brand\(Model)(Variant)(Side)(Seating)(Extension)
+            String pathString = path.toString();
             
-            ArrayList<String> dataset = new ArrayList<String>();
+            //remove "datasets\"
+            String trimmedPathString = pathString.substring(pathString.indexOf("\\") + 1);
             
-            for(int j = 0; j < 121; j++){
-                String[] row = processedRows.get(j);
-                String value = row[i];
-                dataset.add(value);
+            //extract brand info
+            String brand = trimmedPathString.substring(0, trimmedPathString.indexOf("\\"));    
+            
+            //due to filename standardisation we know that everything between the brand and final 6 characters (L1.txt etc) are the
+            //headphone model and variant  
+            String variant = trimmedPathString.substring(trimmedPathString.indexOf("\\") + 1, trimmedPathString.length() - 6);
+
+            //which means that the first char of that set is the side
+            String side = trimmedPathString.substring(trimmedPathString.length() - 6, trimmedPathString.length() - 5);
+
+            //the second is the seating
+            String seating = trimmedPathString.substring(trimmedPathString.length() - 5, trimmedPathString.length() - 4);
+
+            //and the remaining 4 can be ignored, as we know that they must be ".txt"
+
+            //Now let's extract the dataset inside the file
+            ArrayList<String> rows = new ArrayList<String>();
+
+            //Read the file line by line
+            try(BufferedReader br = new BufferedReader(new FileReader(pathString))) {
+                String line;
+                while ((line = br.readLine()) != null){
+                    rows.add(line);
+                }
+                br.close();
+            } catch (Exception e) {
+                System.out.println("Can't find " + pathString + " exception: " + e); 
+            }
+       
+            //Rows is now a list of Strings delimited with commas and with newline characters at the end, 
+            //let's break them down into arrays of values without commas or newline characters
+
+            ArrayList<String[]> processedRows = new ArrayList<String[]>();
+            
+            for(String row : rows){
+                String cleanRow = row.replace("\r\n","");
+                String[] rowAsArray = cleanRow.split(",");
+                processedRows.add(rowAsArray);
             }
 
-            datasets.add(dataset);   
+            //This dataset has a standardised TXT export format so we know that for every file the first
+            //14 rows are metadata, let's remove that from our processedRows ArrayList
+            
+            processedRows.subList(0, 14).clear();
+
+            //Now we have 527 rows with three values, for the time being we're not interested in the phase
+            //data but for data integrity we're going to keep it. Let's split apart these lists into the
+            //datasets we want
+
+            ArrayList<Double> frequencies = new ArrayList<Double>();
+            ArrayList<Double> magnitudes = new ArrayList<Double>();
+            ArrayList<Double> phase = new ArrayList<Double>();
+
+            for(String[] row : processedRows){
+                frequencies.add(Double.parseDouble(row[0]));
+                magnitudes.add(Double.parseDouble(row[1]));
+                phase.add(Double.parseDouble(row[2]));
+            }
+
+            //Now we have a set of the information we need in an anonymous class
+            Dataset dataset = new Dataset();
+            dataset.setLocation(pathString);
+            dataset.setBrand(brand);
+            dataset.setVariant(variant);
+            dataset.setSide(side.charAt(0));
+            dataset.setSeating(Integer.parseInt(String.valueOf(seating)));
+            dataset.setOriginalFrequencies(frequencies);
+            dataset.setOriginalMagnitudes(magnitudes);
+            dataset.setOriginalPhase(phase);
+            dataset.resample();
+            dataset.calculatePpr();
+            datasets.add(dataset);
         }
-
-        System.out.println("Detected datasets are as follows: ");
-
-        for(ArrayList<String> dataset : datasets){
+        
+        for(Dataset dataset : datasets){
             System.out.println(dataset.toString());
         }
 
-        //Now our datasets are stored as ArrayLists of discrete values, and those datasets are stored in an ArrayList. 
-
+    
+        /*
         //-----------------------------------PROCESS DATA--------------------------------
 
         //We have our datasets stored but lists of lists are inconvenient and syntatically unclear to work with, so let's turn them into Dataset
@@ -152,6 +190,6 @@ public class DatasetParser {
 
         //All done! Our datasets have been turned from CSV of absolute magnitudes into all the data we need and can now be uploaded.
         return datasetObjects;
-
+        */
     }
 }

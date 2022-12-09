@@ -31,9 +31,9 @@ public class DatasetUploader {
 
         System.out.println("Reading the datasets file...");
         DatasetParser datasetParser = new DatasetParser();
-        ArrayList<Dataset> datasets = datasetParser.parse();
+        datasetParser.parse();
 
-        //Now we need to connect to our database cluster
+        /*//Now we need to connect to our database cluster
         System.out.println("Reading environment variables from dotenv...");
         Dotenv dotenv = Dotenv.configure()
         .directory("src/main/resources")
@@ -62,7 +62,7 @@ public class DatasetUploader {
         }
 
         //Upload documents to the database
-        headphones.insertMany(documents);
+        headphones.insertMany(documents);*/
 
     }
     

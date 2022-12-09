@@ -7,4 +7,5 @@ target/
 mvnw
 *.cmd
 src/main/resources
+src/DatasetUploader/datasets
 .gcloudignore
