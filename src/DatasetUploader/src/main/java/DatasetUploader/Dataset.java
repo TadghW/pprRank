@@ -13,6 +13,7 @@ public class Dataset {
     private String location;
     private String brand;
     private String variant;
+    private String fullName;
     private char side;
     private int seating;
     private ArrayList<Double> originalFrequencies;
@@ -39,7 +40,7 @@ public class Dataset {
         1.84,1.04,0.14,-0.85,-1.93,-3.07,-4.18,-5.22,-6.16,-7.11,-8.3,-10.07,-12.8,-16.83,-22.32};
     private ArrayList<Double> resampledMagnitudes = new ArrayList<Double>();
     private ArrayList<Double> resampledPhase = new ArrayList<Double>();
-    private Double ppr; 
+    private Double ppr;
 
     public Dataset(){
     }
@@ -66,6 +67,14 @@ public class Dataset {
 
     public void setVariant(String variant) {
         this.variant = variant;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
     }
 
     public char getSide() {
@@ -221,7 +230,7 @@ public class Dataset {
 
         Double headphoneStdev = standardDeviation.evaluate(errorCurve);
         
-        System.out.println("Standard Deviation of Error of " + this.getVariant() + " = " + headphoneStdev);
+        //System.out.println("Standard Deviation of Error of " + this.getVariant() + " = " + headphoneStdev);
         
         //---------------------FINDING THE VARIABLES | SLOPE OF LINEAR REGRESSION OF ERROR---------------- 
 
@@ -240,14 +249,14 @@ public class Dataset {
         Double slope = regression.getSlope();
         Double absSlope = Math.abs(slope);
 
-        System.out.println("Slope of Error of " + this.getVariant() + " = " + slope);
+        //System.out.println("Slope of Error of " + this.getVariant() + " = " + slope);
 
         //Now that we have our two variables, calculating PPR is simple
         Double ppr = 114.490443008238 - (12.6217151040598 * headphoneStdev) - (15.5163857197367 * absSlope);
 
         Double pprRounded = Math.round(ppr*100.0)/100.0;
 
-        System.out.println("Which makes the PPR of " + this.getVariant() + " = " + ppr);
+       // System.out.println("Which makes the PPR of " + this.getVariant() + " = " + ppr);
 
         //Now we know our dataset's ppr!
         this.setPpr(pprRounded);
@@ -335,23 +344,14 @@ public class Dataset {
         PolynomialSplineFunction magSpline = lerp.interpolate(originalFrequenciesArray, originalMagnitudesArray);
         PolynomialSplineFunction phaseSpline = lerp.interpolate(originalFrequenciesArray, originalPhaseArray);
         for(int i = 0; i < preferredFrequencies.length; i++){
-            interpolatedMags.add(Math.round(magSpline.value(preferredFrequencies[i])*100.0)/100.0);
-            resampledPhase.add(Math.round(magSpline.value(preferredFrequencies[i])*100.0)/100.0);
-            System.out.println("Sample from spline: " + interpolatedMags.get(i) + "dBSPL at " + preferredFrequencies[i] + "Hz");
+            interpolatedMags.add(magSpline.value(preferredFrequencies[i]));
+            resampledPhase.add(Math.round(phaseSpline.value(preferredFrequencies[i])*100.0)/100.0);
         }
         
-        double fiveHundredHzMag = 0;
-
-        for(int i = 0; i < preferredFrequencies.length; i++){
-            if(preferredFrequencies[i] == 500){
-                //hardcode this value later and get rid of loop
-                System.out.println("500Hz value is number " + i + " in array");
-                fiveHundredHzMag = interpolatedMags.get(i);
-            }
-        }
+        double fiveHundredHzMag = interpolatedMags.get(56);
 
         for(double interpolatedMag : interpolatedMags){
-            double resampledMag = interpolatedMag - fiveHundredHzMag;
+            double resampledMag = Math.round((interpolatedMag - fiveHundredHzMag) * 100.0) / 100.0;
             resampledMagnitudes.add(resampledMag);
         }
 

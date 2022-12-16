@@ -29,7 +29,7 @@ public class DatasetUploader {
         //These steps are completed in the DatasetParser and Dataset clases
         //DataSetParser.parse() returns a list of Dataset objects it's produced from the CSV
 
-        System.out.println("Reading the datasets file...");
+        System.out.println("Running dataset parser...");
         DatasetParser datasetParser = new DatasetParser();
         datasetParser.parse();
 

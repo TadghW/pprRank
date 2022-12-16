@@ -10,6 +10,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.io.FileReader;
 import main.java.DatasetUploader.Dataset;
+import main.java.DatasetUploader.Variant;
 
 public class DatasetParser {
     
@@ -28,10 +29,10 @@ public class DatasetParser {
         ArrayList<Path> paths = new ArrayList<Path>();
 
         try(Stream<Path> stream = Files.walk(Paths.get("datasets"))){
-            System.out.println("Datasets discovered:");
+            //System.out.println("Datasets discovered:");
             //Although expensive compared to .toString().endsWith(), PathMatcher doesn't risk returning NullPointerExceptions
             PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:**.txt");
-            stream.filter(f -> matcher.matches(f)).peek(System.out::println).forEach(paths::add);
+            stream.filter(f -> matcher.matches(f))/*.peek(System.out::println)*/.forEach(paths::add);
         } catch (Exception e) {
             System.out.println("Panic! " + e);
         }
@@ -41,6 +42,8 @@ public class DatasetParser {
 
         ArrayList<Dataset> datasets = new ArrayList<Dataset>();
 
+        System.out.println("Creating datasets from files...");
+        
         for(Path path : paths){
 
             //We can extract the data we need about each file from its filepath
@@ -55,7 +58,9 @@ public class DatasetParser {
             
             //due to filename standardisation we know that everything between the brand and final 6 characters (L1.txt etc) are the
             //headphone model and variant  
-            String variant = trimmedPathString.substring(trimmedPathString.indexOf("\\") + 1, trimmedPathString.length() - 6);
+            String variant = trimmedPathString.substring(trimmedPathString.indexOf("\\") + 1, trimmedPathString.length() - 7);
+
+            String fullName = brand + " " + variant;
 
             //which means that the first char of that set is the side
             String side = trimmedPathString.substring(trimmedPathString.length() - 6, trimmedPathString.length() - 5);
@@ -114,6 +119,7 @@ public class DatasetParser {
             dataset.setLocation(pathString);
             dataset.setBrand(brand);
             dataset.setVariant(variant);
+            dataset.setFullName(fullName);
             dataset.setSide(side.charAt(0));
             dataset.setSeating(Integer.parseInt(String.valueOf(seating)));
             dataset.setOriginalFrequencies(frequencies);
@@ -124,36 +130,93 @@ public class DatasetParser {
             datasets.add(dataset);
         }
         
+        System.out.println("Bundling into variants...");
 
+        ArrayList<String> variantsCovered = new ArrayList<String>();
+        ArrayList<Variant> variantPackages = new ArrayList<Variant>(); 
+        
         //Assuming that our reasmpling engine and ppr calculation are functioning as we expect them to (remains to be verified)
         //what we actually want to do here is to sort each dataset into packs sorted by headphone variant.
 
-        //From there we want to find 
-        //1) The median-case PPR of each package (headline score) 
-        //2) The mean of absolute PPR variance of each measurement in the package
-        //3) The absolute side to side PPR variation of each package using the opposing cup's median-ppr's deviation from the median-ppr measurement of the best side
-        //4) The positional variance of the package using the RMS mean of absolute ppr variance from the median-ppr of the set  
-        //5) The bass leakage using the measurement with the lowest sum magnitude below 200Hz compared to that with the highest sum magnitude below 200Hz 
-
-        ArrayList<Double> pprs = new ArrayList<Double>();
-
         for(Dataset dataset : datasets){
-            pprs.add(dataset.getPpr());    
-        }
+            
+            //If the variants covered list marks this variant as complete ignore
+            if(variantsCovered.contains(dataset.getFullName())){
+                System.out.println(dataset.getFullName() + " already has a variant package in the list - ignoring...");
+            } else {
+                
+                //Otherwise make a new variant
 
-        Object[] pprsArr = pprs.toArray();
+                System.out.println("No variant package exists for " + dataset.getFullName() + "! Creating one now...");
+                Dataset l1 = new Dataset();
+                Dataset l2 = new Dataset();
+                Dataset l3 = new Dataset();
+                Dataset r1 = new Dataset();
+                Dataset r2 = new Dataset();
+                Dataset r3 = new Dataset();
+                
+                //Find the datasets required to gather L1-3 and R1-3 into Variant
+                for(int i = 0; i < datasets.size(); i++){
 
-        Arrays.sort(pprsArr);
-
-        for(Object ppr : pprsArr){
-            String name = " ";
-            for(Dataset dataset : datasets){
-                if(dataset.getPpr() == ppr){
-                    name = dataset.getBrand() + " " + dataset.getVariant();
+                    if(datasets.get(i).getFullName().equals(dataset.getFullName())){
+                        if(datasets.get(i).getSide() == 'L'){
+                            switch(datasets.get(i).getSeating()){
+                                case 1: {
+                                    System.out.println("Found " + datasets.get(i).getFullName() + " " + datasets.get(i).getSide() + datasets.get(i).getSeating());
+                                    l1 = datasets.get(i);
+                                    break;
+                                }
+                                case 2: {
+                                    System.out.println("Found " + datasets.get(i).getFullName() + " " + datasets.get(i).getSide() + datasets.get(i).getSeating());
+                                    l2 = datasets.get(i);
+                                    break;
+                                }
+                                case 3: {
+                                    System.out.println("Found " + datasets.get(i).getFullName() + " " + datasets.get(i).getSide() + datasets.get(i).getSeating());
+                                    l3 = datasets.get(i);
+                                    break;
+                                }
+                            }
+                        } else if(datasets.get(i).getSide() == 'R'){
+                            switch(datasets.get(i).getSeating()){
+                                case 1: {
+                                    System.out.println("Found " + datasets.get(i).getFullName() + " " + datasets.get(i).getSide() + datasets.get(i).getSeating());
+                                    r1 = datasets.get(i);
+                                    break;
+                                }
+                                case 2: {
+                                    System.out.println("Found " + datasets.get(i).getFullName() + " " + datasets.get(i).getSide() + datasets.get(i).getSeating());
+                                    r2 = datasets.get(i);
+                                    break;
+                                }
+                                case 3: {
+                                    System.out.println("Found " + datasets.get(i).getFullName() + " " + datasets.get(i).getSide() + datasets.get(i).getSeating());
+                                    r3 = datasets.get(i);
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
+                
+                System.out.println("Packaging variant...");
+                Variant variant = new Variant(dataset.getBrand(), dataset.getVariant(), dataset.getFullName(), l1, l2, l3, r1, r2, r3);
+                System.out.println("Variant for " + dataset.getFullName() + " created. Calculating ratings...");
+                variant.rateVariant();
+                variantPackages.add(variant);
+                variantsCovered.add(dataset.getFullName());
             }
-            System.out.println(name + " PPR = " + ppr);
         }
+
+        Collections.sort(variantPackages, Variant.CompareByPprAscending);
+        
+        for(Variant variant : variantPackages){
+            System.out.println(variant.toString());
+        }
+
+        System.out.println("Dataset ingest operation successful!\r\n" + variantPackages.size() + " headphone variants catalogued using " + datasets.size() +  " datasets.");
+      
+
         
 
     
@@ -196,8 +259,8 @@ public class DatasetParser {
             }
 
             //With that done we can create a Dataset object and populate it with the data we have so far (name and relative magnitude)
-            Dataset dataset2 = new Dataset(name, magnitudes);
-            datasetObjects.add(dataset2);
+            Dataset datasets.get(i) = new Dataset(name, magnitudes);
+            datasetObjects.add(datasets.get(i));
         }
 
         //-----------------------------------CALCULATING PPR-------------------------------
