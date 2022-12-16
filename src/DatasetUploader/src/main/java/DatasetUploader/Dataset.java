@@ -1,9 +1,11 @@
 package main.java.DatasetUploader;
 
-import java.util.ArrayList;
+import java.util.*;
 import java.lang.Math;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
+import org.apache.commons.math3.analysis.interpolation.LinearInterpolator;
+import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 
 
 public class Dataset {
@@ -19,7 +21,7 @@ public class Dataset {
     private double[] preferredFrequencies = {20,21.2,22.4,23.6,25,26.5,28,30,31.5,33.5,35.5,37.5,40,42.5,45,47.5,50,53,56,60,63,67,71,75,80,85,90,95,100,106,112,118,125,132,140,150,
         160,170,180,190,200,212,224,236,250,265,280,300,315,335,355,375,400,425,450,475,500,530,560,600,630,670,710,750,800,850,900,950,1000,1060,1120,1180,
         1250,1320,1400,1500,1600,1700,1800,1900,2000,2120,2240,2360,2500,2650,2800,3000,3150,3350,3550,3750,4000,4250,4500,4750,5000,5300,5600,6000,6300,
-        6700,7100,7500,8000,8500,9000,9500,10000,10600,11200,11800,12500,13200,14000,15000,16000,17000,18000,19000,20000};
+        6700,7100,7500,8000,8500,9000,9500,10000,10600,11200,11800,12500,13200,14000,15000,16000,17000,18000,19000,19650};
     private double[] preferredFrequenciesLinearProgression = {2.995732274,3.054001182,3.109060959,3.161246712,3.218875825,3.277144733,3.33220451,3.401197382,3.449987546,3.511545439,
         3.569532696,3.624340933,3.688879454,3.749504076,3.80666249,3.860729711,3.912023005,3.970291914,4.025351691,4.094344562,4.143134726,4.204692619,4.262679877,
         4.317488114,4.382026635,4.442651256,4.49980967,4.553876892,4.605170186,4.663439094,4.718498871,4.770684624,4.828313737,4.882801923,4.941642423,5.010635294,
@@ -35,7 +37,8 @@ public class Dataset {
         -0.57,-0.46,-0.37,-0.29,-0.23,-0.16,-0.08,0,0.1,0.2,0.3,0.39,0.48,0.55,0.61,0.66,0.69,0.73,0.77,0.84,0.96,1.13,1.36,1.66,2.01,2.44,2.94,3.51,
         4.13,4.79,5.45,6.11,6.73,7.3,7.81,8.25,8.62,8.92,9.16,9.33,9.42,9.41,9.28,9.03,8.68,8.24,7.77,7.29,6.83,6.4,5.97,5.53,5.05,4.52,3.92,3.27,2.58,
         1.84,1.04,0.14,-0.85,-1.93,-3.07,-4.18,-5.22,-6.16,-7.11,-8.3,-10.07,-12.8,-16.83,-22.32};
-    private ArrayList<Double> resampledMagnitudes;
+    private ArrayList<Double> resampledMagnitudes = new ArrayList<Double>();
+    private ArrayList<Double> resampledPhase = new ArrayList<Double>();
     private Double ppr; 
 
     public Dataset(){
@@ -207,7 +210,7 @@ public class Dataset {
         double[] errorCurve = new double[93];
 
         for(int i = 16; i < 109; i++){
-            double magnitude = this.preferredFrequencies[i];
+            double magnitude = this.resampledMagnitudes.get(i);
             double target = harmanAeOe2018[i];
             double error = magnitude - target;
             errorCurve[i-16] = error;
@@ -250,11 +253,115 @@ public class Dataset {
         this.setPpr(pprRounded);
     }
 
+    public void resample(){
+
+        //The raw exports in this dataset are inconvenient for our web app in a number of ways.
+        //First of all, they capture frequency samples as low as 10Hz, frequencies that are
+        //inconsequential for headphones. Secondly, they're higher resoution than we need, and
+        //they use different samples than we do. We could just use magnitude samples from the 
+        //nearest sample to our preferred sample locations but we can do better.
+
+        //What we're going to do instead is look at each sample in our preferred frequency set,
+        //identify any direct matches where we can lift the mangitude data wholesale from the 
+        //measuremment dataset. When we don't have a matching sample. we're going to identify
+        //the samples in the measurement that surround the preferred sample in our set and 
+        //use that data in a linear interpolation algorithm to grab a different sample from the
+        //line described by the original dataset
+        
+        
+        /*//Make a list of what frequency samples in the original dataset bracket or match our
+        //preferred frequencies
+        ArrayList<Int[]> closestFrequenciesByIndex = new ArrayList<Int[]>(); 
+        
+        for(Double frequency : this.preferredFrequencies){
+
+            ArrayList<Int> nearestFrequenciesIndex = new ArrayList<Int>();
+            double closestPrevFrequencyDistance = 20000;
+            int closestPrevFrequencyIndex;
+            double closestNextFrequencyDistance = 20000;
+            int closestNextFrequencyIndex;
+
+            for(int i = 0; i < this.originalFrequencies.size(); i++){
+                double originalFreq = this.originalFrequencies.get(i);
+                if(this.originalFreq == frequency){
+                    nearestFrequenciesIndex.add(i);
+                } else if(originalFreq != frequency){
+                    double frequencyDistance = originalFreq - frequency;
+                    if(frequencyDistance > 0){
+                        if(Math.abs(frequencyDistance) < closestNextFrequencyDistance){
+                            closestNextFrequencyDistance = Math.abs(frequencyDistance);
+                            closestNextFrequencyIndex = i;
+                        } 
+                    } else if (frequencyDistance < 0){
+                        if(Maths.abs(frequencyDistance) < closestPrevFrequencyDistance){
+                            closestPrevFrequencyDistance = Math.abs(frequencyDistance);
+                            closestPrevFrequencyIndex = i;
+                        }
+                    }
+                }
+            }
+
+            if(nearestFrequenciesIndex.size() == 1){
+                closestFrequenciesByIndex.add(nearestFrequenciesIndex.get(0));
+            } else {
+                int[] closestFrequencies = {closestPrevFrequencyIndex, closestNextFrequencyIndex};
+                closestFrequenciesByIndex.add(closestFrequencies);
+            }
+
+        }
+
+        //Now we can use the magnitudes at the locations in closestFrequenciesByIndex to calculate our
+        //magnitude values for our preferred frequencies
+
+        for(int i = 0; i < preferredFrequencies.length; i ++){
+            if(closestFrequenciesByIndex.get(i).length == 1){
+                int[] pFBracketArray = closestFrequenciesByIndex.get(i);
+                resampledMagnitudes.add(pFBracketArray[0]);
+            } else {
+
+            }
+        }*/
+
+        ArrayList<Double> interpolatedMags = new ArrayList<Double>();
+        double[] originalFrequenciesArray = new double[originalFrequencies.size()];
+        double[] originalMagnitudesArray = new double[originalFrequencies.size()];
+        double[] originalPhaseArray = new double[originalFrequencies.size()];
+        for(int i=0; i < originalFrequenciesArray.length ; i++){
+            originalFrequenciesArray[i] = originalFrequencies.get(i);
+            originalMagnitudesArray[i] = originalMagnitudes.get(i);
+            originalPhaseArray[i] = originalPhase.get(i);
+        }
+        LinearInterpolator lerp = new LinearInterpolator();
+        PolynomialSplineFunction magSpline = lerp.interpolate(originalFrequenciesArray, originalMagnitudesArray);
+        PolynomialSplineFunction phaseSpline = lerp.interpolate(originalFrequenciesArray, originalPhaseArray);
+        for(int i = 0; i < preferredFrequencies.length; i++){
+            interpolatedMags.add(Math.round(magSpline.value(preferredFrequencies[i])*100.0)/100.0);
+            resampledPhase.add(Math.round(magSpline.value(preferredFrequencies[i])*100.0)/100.0);
+            System.out.println("Sample from spline: " + interpolatedMags.get(i) + "dBSPL at " + preferredFrequencies[i] + "Hz");
+        }
+        
+        double fiveHundredHzMag = 0;
+
+        for(int i = 0; i < preferredFrequencies.length; i++){
+            if(preferredFrequencies[i] == 500){
+                //hardcode this value later and get rid of loop
+                System.out.println("500Hz value is number " + i + " in array");
+                fiveHundredHzMag = interpolatedMags.get(i);
+            }
+        }
+
+        for(double interpolatedMag : interpolatedMags){
+            double resampledMag = interpolatedMag - fiveHundredHzMag;
+            resampledMagnitudes.add(resampledMag);
+        }
+
+    }
+
     @Override
     public String toString() {
         return "Dataset [location=" + location + ", brand=" + brand + ", variant=" + variant + ", side=" + side
                 + ", seating=" + seating + ", originalFrequencies=" + originalFrequencies + ", originalMagnitudes="
-                + originalMagnitudes + ", originalPhase=" + originalPhase + ", resampledMagnitudes=" + resampledMagnitudes + ", ppr=" + ppr + "]";
+                + originalMagnitudes + ", originalPhase=" + originalPhase + ", resampledMagnitudes=" + resampledMagnitudes + ", resampledPhase=" + resampledPhase + ", ppr=" + ppr + "]";
     
     }
 }

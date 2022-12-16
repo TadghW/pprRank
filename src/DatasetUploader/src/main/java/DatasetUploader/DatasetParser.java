@@ -109,7 +109,7 @@ public class DatasetParser {
                 phase.add(Double.parseDouble(row[2]));
             }
 
-            //Now we have a set of the information we need in an anonymous class
+            //Now we have a set of the information we need into our base dataset class
             Dataset dataset = new Dataset();
             dataset.setLocation(pathString);
             dataset.setBrand(brand);
@@ -124,9 +124,37 @@ public class DatasetParser {
             datasets.add(dataset);
         }
         
+
+        //Assuming that our reasmpling engine and ppr calculation are functioning as we expect them to (remains to be verified)
+        //what we actually want to do here is to sort each dataset into packs sorted by headphone variant.
+
+        //From there we want to find 
+        //1) The median-case PPR of each package (headline score) 
+        //2) The mean of absolute PPR variance of each measurement in the package
+        //3) The absolute side to side PPR variation of each package using the opposing cup's median-ppr's deviation from the median-ppr measurement of the best side
+        //4) The positional variance of the package using the RMS mean of absolute ppr variance from the median-ppr of the set  
+        //5) The bass leakage using the measurement with the lowest sum magnitude below 200Hz compared to that with the highest sum magnitude below 200Hz 
+
+        ArrayList<Double> pprs = new ArrayList<Double>();
+
         for(Dataset dataset : datasets){
-            System.out.println(dataset.toString());
+            pprs.add(dataset.getPpr());    
         }
+
+        Object[] pprsArr = pprs.toArray();
+
+        Arrays.sort(pprsArr);
+
+        for(Object ppr : pprsArr){
+            String name = " ";
+            for(Dataset dataset : datasets){
+                if(dataset.getPpr() == ppr){
+                    name = dataset.getBrand() + " " + dataset.getVariant();
+                }
+            }
+            System.out.println(name + " PPR = " + ppr);
+        }
+        
 
     
         /*
