@@ -8,4 +8,5 @@ mvnw
 *.cmd
 src/main/resources
 src/DatasetUploader/datasets
+src/DatasetUploader/measurements
 .gcloudignore

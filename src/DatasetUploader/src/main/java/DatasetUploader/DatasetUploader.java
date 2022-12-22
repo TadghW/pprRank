@@ -1,8 +1,10 @@
 package main.java.DatasetUploader;
 
-import main.java.DatasetUploader.DatasetParser;
+import main.java.DatasetUploader.MeasurementSorter;
 import java.util.ArrayList;
 import java.io.BufferedReader;
+import java.net.http.WebSocket.Listener;
+
 import static com.mongodb.client.model.Filters.eq;
 import io.github.cdimascio.dotenv.*;
 import org.bson.Document;
@@ -19,50 +21,64 @@ public class DatasetUploader {
 
     public static void main(String[] args) {
 
-
         //This uploader is a relatively simple program because I'm the only intended user and don't need a user interface and will always
-        //format my documents in the same way. It reads the file "headphones.csv" at the project root, which is a list of headphone frequency
-        //response datasets. I can copy and paste from the software that I use to take measurements, or from software I use to resample existing
-        //measurements into that file and run this program to process the data and upload reformatted datasets to the PPRList database.
+        //format my documents in the same way.
 
-        //First we need to read the file, distill its datasets, turn them into the objects that we want to work with, and calculate their PPRs.
-        //These steps are completed in the DatasetParser and Dataset clases
-        //DataSetParser.parse() returns a list of Dataset objects it's produced from the CSV
+        //First we need to crawl the measurements folder, distill its datasets, turn them into the objects that we want to work with, and calculate their PPRs.
+        //These steps are completed in the DatasetParser, Measurement, Sample, and Model classes
 
         System.out.println("Running dataset parser...");
-        DatasetParser datasetParser = new DatasetParser();
-        datasetParser.parse();
+        MeasurementSorter measurementSorter = new MeasurementSorter();
+        ArrayList<Measurement> measurements = measurementSorter.sortMeasurements();
+        ArrayList<Sample> samples = measurementSorter.bundleToSamples(measurements);
+        ArrayList<Model> models = measurementSorter.bundleToModels(samples, measurements);
 
-        /*//Now we need to connect to our database cluster
-        System.out.println("Reading environment variables from dotenv...");
+        /*System.out.println("Reading environment variables from dotenv...");
         Dotenv dotenv = Dotenv.configure()
         .directory("src/main/resources")
         .filename("environment.env")
         .load();
         String mongoDbUri = dotenv.get("MONGODB_URI");
 
-        System.out.println("Attempting to connect to Basre Cluster...");
+        System.out.println("Attempting to connect to cluster...");
         MongoClient mongoClient = MongoClients.create(mongoDbUri);
         System.out.println("Connection successful!");
         
-        //Target the relevant collections
+        //First we're going to upload the cut down information we want clients to pull from
         System.out.println("Finding collection..");
-        MongoDatabase pprRankDatabase = mongoClient.getDatabase("PPR-Listing");
-        MongoCollection<Document> headphones = pprRankDatabase.getCollection("Headphones");
+        MongoDatabase pprRankDatabase = mongoClient.getDatabase("pprRankList");
+        MongoCollection<Document> headphones = pprRankDatabase.getCollection("modelSummaries");
+        ArrayList<Document> headphoneSummaries = new ArrayList<Document>();
 
-        //Create documents from our list of datasets
-        ArrayList<Document> documents = new ArrayList<Document>();
-        
-        for(Dataset dataset : datasets){
-            Document headphoneDataset = new Document("_id", new ObjectId());
-            headphoneDataset.append("name", dataset.getName())
-            .append("frequencyResponse", dataset.getMagnitudes())
-            .append("ppr", dataset.getPpr());
-            documents.add(headphoneDataset);
+        System.out.println("Listing model summaries...");
+        for(Model model : models){
+            Document modelSummary = new Document("_id", new ObjectId());
+            modelSummary.append("brand", model.getBrand())
+            .append("model", model.getModel())
+            .append("fullName", model.getFullName())
+            .append("averagePpr", model.getAveragePpr())
+            .append("cupVariation", model.getCupConsistency())
+            .append("cupVariationScore", model.getCupConsistencyScore())
+            .append("fitVariation", model.getFitConsistency())
+            .append("fitVariationScore", model.getFitConsistencyScore())
+            .append("sealVariation", model.getSealConsistency())
+            .append("sealVariationScore", model.getSealConsistencyScore())
+            .append("unitVariation", model.getUnitConsistency())
+            .append("unitVariationScore", model.getUnitConsistency())
+            .append("comfortIssues", model.getComfortIssues())
+            .append("comfortIssuesDebuff", model.getComfortIssuesDebuff())
+            .append("buildIssues", model.getBuildIssues())
+            .append("buildIssuesDebuff", model.getBuildIssuesDebuff())
+            .append("finalScore", model.getFinalScore())
+            .append("notes", "")
+            .append("averageDataset", model.getRepresentativeFrequencyResponse());
+            headphoneSummaries.add(modelSummary);
         }
 
-        //Upload documents to the database
-        headphones.insertMany(documents);*/
+        System.out.println("Uploading model summaries...");
+
+        //Upload summaries
+        headphones.insertMany(headphoneSummaries);*/
 
     }
     

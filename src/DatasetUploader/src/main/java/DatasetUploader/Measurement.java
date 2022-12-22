@@ -8,9 +8,9 @@ import org.apache.commons.math3.analysis.interpolation.LinearInterpolator;
 import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
 
 
-public class Dataset {
+public class Measurement {
 
-    private String location;
+    private String origin;
     private String brand;
     private String variant;
     private String fullName;
@@ -42,15 +42,15 @@ public class Dataset {
     private ArrayList<Double> resampledPhase = new ArrayList<Double>();
     private Double ppr;
 
-    public Dataset(){
+    public Measurement(){
     }
 
     public String getLocation() {
-        return location;
+        return origin;
     }
 
-    public void setLocation(String location) {
-        this.location = location;
+    public void setLocation(String origin) {
+        this.origin = origin;
     }
 
     public String getBrand() {
@@ -258,13 +258,13 @@ public class Dataset {
 
        // System.out.println("Which makes the PPR of " + this.getVariant() + " = " + ppr);
 
-        //Now we know our dataset's ppr!
+        //Now we know our measurement's ppr!
         this.setPpr(pprRounded);
     }
 
     public void resample(){
 
-        //The raw exports in this dataset are inconvenient for our web app in a number of ways.
+        //The raw exports in this measurement are inconvenient for our web app in a number of ways.
         //First of all, they capture frequency samples as low as 10Hz, frequencies that are
         //inconsequential for headphones. Secondly, they're higher resoution than we need, and
         //they use different samples than we do. We could just use magnitude samples from the 
@@ -276,60 +276,6 @@ public class Dataset {
         //the samples in the measurement that surround the preferred sample in our set and 
         //use that data in a linear interpolation algorithm to grab a different sample from the
         //line described by the original dataset
-        
-        
-        /*//Make a list of what frequency samples in the original dataset bracket or match our
-        //preferred frequencies
-        ArrayList<Int[]> closestFrequenciesByIndex = new ArrayList<Int[]>(); 
-        
-        for(Double frequency : this.preferredFrequencies){
-
-            ArrayList<Int> nearestFrequenciesIndex = new ArrayList<Int>();
-            double closestPrevFrequencyDistance = 20000;
-            int closestPrevFrequencyIndex;
-            double closestNextFrequencyDistance = 20000;
-            int closestNextFrequencyIndex;
-
-            for(int i = 0; i < this.originalFrequencies.size(); i++){
-                double originalFreq = this.originalFrequencies.get(i);
-                if(this.originalFreq == frequency){
-                    nearestFrequenciesIndex.add(i);
-                } else if(originalFreq != frequency){
-                    double frequencyDistance = originalFreq - frequency;
-                    if(frequencyDistance > 0){
-                        if(Math.abs(frequencyDistance) < closestNextFrequencyDistance){
-                            closestNextFrequencyDistance = Math.abs(frequencyDistance);
-                            closestNextFrequencyIndex = i;
-                        } 
-                    } else if (frequencyDistance < 0){
-                        if(Maths.abs(frequencyDistance) < closestPrevFrequencyDistance){
-                            closestPrevFrequencyDistance = Math.abs(frequencyDistance);
-                            closestPrevFrequencyIndex = i;
-                        }
-                    }
-                }
-            }
-
-            if(nearestFrequenciesIndex.size() == 1){
-                closestFrequenciesByIndex.add(nearestFrequenciesIndex.get(0));
-            } else {
-                int[] closestFrequencies = {closestPrevFrequencyIndex, closestNextFrequencyIndex};
-                closestFrequenciesByIndex.add(closestFrequencies);
-            }
-
-        }
-
-        //Now we can use the magnitudes at the locations in closestFrequenciesByIndex to calculate our
-        //magnitude values for our preferred frequencies
-
-        for(int i = 0; i < preferredFrequencies.length; i ++){
-            if(closestFrequenciesByIndex.get(i).length == 1){
-                int[] pFBracketArray = closestFrequenciesByIndex.get(i);
-                resampledMagnitudes.add(pFBracketArray[0]);
-            } else {
-
-            }
-        }*/
 
         ArrayList<Double> interpolatedMags = new ArrayList<Double>();
         double[] originalFrequenciesArray = new double[originalFrequencies.size()];
@@ -359,9 +305,23 @@ public class Dataset {
 
     @Override
     public String toString() {
-        return "Dataset [location=" + location + ", brand=" + brand + ", variant=" + variant + ", side=" + side
+        return "Measurement [origin=" + origin + ", brand=" + brand + ", variant=" + variant + ", side=" + side
                 + ", seating=" + seating + ", originalFrequencies=" + originalFrequencies + ", originalMagnitudes="
                 + originalMagnitudes + ", originalPhase=" + originalPhase + ", resampledMagnitudes=" + resampledMagnitudes + ", resampledPhase=" + resampledPhase + ", ppr=" + ppr + "]";
     
     }
+
+    public static Comparator<Measurement> CompareByPprAscending = new Comparator<Measurement>() {
+        public int compare(Measurement v1, Measurement v2){
+            double v1ppr = v1.getPpr();
+            double v2ppr = v2.getPpr();
+            if(v1ppr > v2ppr){
+                return 1;
+            } else if (v1ppr < v2ppr){
+                return -1;
+            } else {
+                return 0;
+            }
+        }
+    };
 }
