@@ -33,7 +33,7 @@ public class DatasetUploader {
         ArrayList<Sample> samples = measurementSorter.bundleToSamples(measurements);
         ArrayList<Model> models = measurementSorter.bundleToModels(samples, measurements);
 
-        /*System.out.println("Reading environment variables from dotenv...");
+        System.out.println("Reading environment variables from dotenv...");
         Dotenv dotenv = Dotenv.configure()
         .directory("src/main/resources")
         .filename("environment.env")
@@ -47,7 +47,7 @@ public class DatasetUploader {
         //First we're going to upload the cut down information we want clients to pull from
         System.out.println("Finding collection..");
         MongoDatabase pprRankDatabase = mongoClient.getDatabase("pprRankList");
-        MongoCollection<Document> headphones = pprRankDatabase.getCollection("modelSummaries");
+        MongoCollection<Document> modelSummaries = pprRankDatabase.getCollection("modelSummaries");
         ArrayList<Document> headphoneSummaries = new ArrayList<Document>();
 
         System.out.println("Listing model summaries...");
@@ -78,7 +78,7 @@ public class DatasetUploader {
         System.out.println("Uploading model summaries...");
 
         //Upload summaries
-        headphones.insertMany(headphoneSummaries);*/
+        modelSummaries.insertMany(headphoneSummaries);
 
     }
     
