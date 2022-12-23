@@ -42,12 +42,12 @@ public class DatasetUploader {
 
         System.out.println("Attempting to connect to cluster...");
         MongoClient mongoClient = MongoClients.create(mongoDbUri);
-        System.out.println("Connection successful!");
         
         //First we're going to upload the cut down information we want clients to pull from
-        System.out.println("Finding collection..");
-        MongoDatabase pprRankDatabase = mongoClient.getDatabase("pprRankList");
-        MongoCollection<Document> modelSummaries = pprRankDatabase.getCollection("modelSummaries");
+        System.out.println("Connecting to database..");
+        MongoDatabase pprRankDatabase = mongoClient.getDatabase("headphones-science");
+        System.out.println("Finding pprRank collection...");
+        MongoCollection<Document> modelSummaries = pprRankDatabase.getCollection("pprRank");
         ArrayList<Document> headphoneSummaries = new ArrayList<Document>();
 
         System.out.println("Listing model summaries...");
@@ -71,7 +71,8 @@ public class DatasetUploader {
             .append("buildIssuesDebuff", model.getBuildIssuesDebuff())
             .append("finalScore", model.getFinalScore())
             .append("notes", "")
-            .append("averageDataset", model.getRepresentativeFrequencyResponse());
+            .append("averageDataset", model.getRepresentativeFrequencyResponse())
+            .append("confidence", model.getConfidence());
             headphoneSummaries.add(modelSummary);
         }
 

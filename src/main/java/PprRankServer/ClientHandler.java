@@ -1,10 +1,12 @@
 package main.java.pprrankserver;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import main.java.pprrankserver.*; 
 
@@ -42,14 +44,21 @@ public class ClientHandler implements Runnable {
                 request.append(line + "\r\n");
                 line = br.readLine();
             }
-            
-            WebpageBuilder webpageBuilder = new WebpageBuilder();
 
             //As with the InputStream the OutputStream accepts bytes and nothing else so we have to convert any response we prepare to bytes before sending them through
             OutputStream outputStream = client.getOutputStream();
             outputStream.write(("HTTP/1.1 200 OK\r\n").getBytes());
             outputStream.write(("\r\n").getBytes());
-            outputStream.write((webpageBuilder.build()).getBytes());
+
+            ObjectMapper mapper = new ObjectMapper();
+
+            ByteArrayOutputStream response = new ByteArrayOutputStream();
+
+            for(ModelSummary model : PprRankServer.headphoneList){
+                response.write(mapper.writeValueAsBytes(model));
+            }
+
+            outputStream.write(response.toByteArray());
 
             System.out.println("Response issued to " + client.toString() + " by " + threadNo);
             

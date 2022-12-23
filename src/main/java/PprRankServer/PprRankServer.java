@@ -1,12 +1,13 @@
 package main.java.pprrankserver;
 
 import main.java.pprrankserver.DatasetPopulator;
-import main.java.pprrankserver.Dataset;
+import main.java.pprrankserver.ModelSummary;
 import java.net.ServerSocket;
 import main.java.pprrankserver.ClientHandler; 
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 class PprRankServer {
 
@@ -16,12 +17,23 @@ class PprRankServer {
 
     private static DatasetPopulator datasetPopulator = new DatasetPopulator();
 
-    protected static Dataset[] headphoneList = datasetPopulator.populate();
+    protected static ModelSummary[] headphoneList = datasetPopulator.populate();
 
 
     private static int threadCount = 0;
 
     public static void main(String[] args) {
+
+        System.out.println("Global resource filled and active. Currently storing the following datasets: ");
+
+        try{
+            ObjectMapper mapper = new ObjectMapper();
+            for(ModelSummary model : headphoneList){
+                System.out.println(mapper.writeValueAsString(model));
+            } 
+        } catch (Exception e) {
+                System.out.println("uh oh " + e);
+        }
 
         //Sockets are a java.net feature that allows us to quickly connect our appplication to networking infrastructure
         //Check out the ClientHandler if you want to see client sockets in use.
@@ -47,12 +59,6 @@ class PprRankServer {
             }
         } catch (Exception e){
             System.out.println("\r\nFailed to launch the server, exception: " + e + "\r\n");
-        }
-
-        System.out.println("Global resource filled and active. Currently storing the following datasets: ");
-        
-        for(Dataset dataset : headphoneList){
-            System.out.println(dataset.toString());
         }
 
     }

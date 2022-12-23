@@ -18,7 +18,7 @@ import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.ConnectionString;
 import java.util.ArrayList;
-import main.java.pprrankserver.Dataset;
+import main.java.pprrankserver.ModelSummary;
 import java.lang.System.*;
 
 public class DatasetPopulator {
@@ -27,7 +27,7 @@ public class DatasetPopulator {
 
     public DatasetPopulator(){
 
-        System.out.println("pprRank v0.2.0 <- 29/11/22");
+        System.out.println("pprRank v0.8.9 <- 23/12/22");
 
         //---------------------------------------ONLY USED WHEN TESTING IN DEVELOPMENT--------------------------------
 
@@ -72,31 +72,27 @@ public class DatasetPopulator {
 
     }
 
-    public Dataset[] populate(){
+    public ModelSummary[] populate(){
 
-        ArrayList<Dataset> datasets = new ArrayList<Dataset>();
+        ArrayList<ModelSummary> datasets = new ArrayList<ModelSummary>();
 
         System.out.println("Accessing database...");
 
-        MongoDatabase database = this.mongoClient.getDatabase("PPR-Listing");
+        MongoDatabase database = this.mongoClient.getDatabase("headphones-science");
 
         System.out.println("Accessing collection...");
         
-        MongoCollection<Document> headphones = database.getCollection("Headphones");
+        MongoCollection<Document> headphones = database.getCollection("pprRank");
 
         System.out.println("Retrieving datasets...");
         
         FindIterable results = headphones.find();
 
-        System.out.println("Downloading datasets...");
-
-        BSONReader bsonConverter = new BSONReader();
-
         System.out.println("Converting datasets...");
 
         try(MongoCursor<Document> cursor = results.iterator()){
             while(cursor.hasNext()) {
-                datasets.add(bsonConverter.convertToDataset(cursor.next()));
+                datasets.add(new ModelSummary(cursor.next()));
             }
         } catch (Exception e) {
             System.out.println("DatasetPopulator.populate() can't iterate over the returned dataset collection. Exception: " + e);
@@ -104,7 +100,7 @@ public class DatasetPopulator {
 
         System.out.println("Adding datasets to the global resource...");
 
-        Dataset[] datasetArr = new Dataset[datasets.size()];
+        ModelSummary[] datasetArr = new ModelSummary[datasets.size()];
 
         for(int i = 0; i < datasets.size(); i++){
             datasetArr[i] = datasets.get(i);
@@ -113,7 +109,6 @@ public class DatasetPopulator {
         System.out.println("Publishing global resource...");
 
         return datasetArr;
-
     }
     
 }
