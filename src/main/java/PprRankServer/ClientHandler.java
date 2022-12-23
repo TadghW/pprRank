@@ -7,6 +7,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 import main.java.pprrankserver.*; 
 
@@ -39,26 +42,40 @@ public class ClientHandler implements Runnable {
             //Using our string builder we can append these lines into a single string with whatever formatting we want
             String line = br.readLine();
 
+
+
             //We want to stop reading when we've run out of data to read
-            while(!line.isBlank()){
+            while(line != null && !line.isBlank()){
                 request.append(line + "\r\n");
                 line = br.readLine();
             }
 
+            DateFormat df = new SimpleDateFormat("EEE, MMM d, yyyy HH:mm:ss z");
+
             //As with the InputStream the OutputStream accepts bytes and nothing else so we have to convert any response we prepare to bytes before sending them through
             OutputStream outputStream = client.getOutputStream();
             outputStream.write(("HTTP/1.1 200 OK\r\n").getBytes());
+            outputStream.write((new String("Date: " + df.format(new Date())) + "\r\n").getBytes());
+            outputStream.write(("Access-Control-Allow-Origin: * \r\n").getBytes());
+            outputStream.write(("Content-Type: application/json\r\n").getBytes());
             outputStream.write(("\r\n").getBytes());
+            outputStream.write(("[").getBytes());
+
+            StringBuilder responseBody = new StringBuilder();
 
             ObjectMapper mapper = new ObjectMapper();
 
-            ByteArrayOutputStream response = new ByteArrayOutputStream();
-
             for(ModelSummary model : PprRankServer.headphoneList){
-                response.write(mapper.writeValueAsBytes(model));
+                responseBody.append(mapper.writeValueAsString(model));
+                responseBody.append(",");
             }
 
-            outputStream.write(response.toByteArray());
+            responseBody.delete((responseBody.length() -1), responseBody.length());
+            responseBody.append("]");
+
+            String response = responseBody.toString();
+
+            outputStream.write(response.getBytes());
 
             System.out.println("Response issued to " + client.toString() + " by " + threadNo);
             
@@ -67,7 +84,7 @@ public class ClientHandler implements Runnable {
             outputStream.close();
 
         } catch(IOException e) {
-            System.out.println("ClientHandler thread " + threadNo + "has encountered an exception: " + e );
+            System.out.println("ClientHandler thread " + threadNo + " has encountered an exception: " + e );
         }
     }   
 }

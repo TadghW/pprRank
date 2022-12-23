@@ -54,7 +54,6 @@ public class DatasetPopulator {
         //Example: docker build --secret id=environment,src=pprRank/environment.env --tag pprrank-latest:tag pprRank
 
         String connectionString = System.getenv("MONGODB_URI"); 
-        System.out.println("connectionString = " + connectionString);
 
         //It's noteworthy that mongodb uses a client settings builder for when you're attempting a connection with a greater number of parameters,
         //something I experimented with in particular when using Mongo's Codec / Codec Registry system for converting documents to Dataset classes

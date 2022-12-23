@@ -7,7 +7,7 @@ FROM eclipse-temurin:17-jdk-jammy
 WORKDIR /application
 
 # Because target is in .dockerignore put the most up to date jar at the root of your project folder for inclusion in Docker Build
-COPY pprrank-0.1.0.jar ./
+COPY pprrank-0.8.2.jar ./
 
 # Run the jar
-CMD ["java", "-jar", "pprrank-0.1.0.jar"]
+CMD ["java", "-jar", "pprrank-0.8.2.jar"]
