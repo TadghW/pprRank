@@ -17,8 +17,9 @@ import com.mongodb.client.*;
 import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.ConnectionString;
+import java.util.Collections;
 import java.util.ArrayList;
-import main.java.pprrankserver.ModelSummary;
+import main.java.pprrankserver.Listing;
 import java.lang.System.*;
 
 public class DatasetPopulator {
@@ -27,7 +28,7 @@ public class DatasetPopulator {
 
     public DatasetPopulator(){
 
-        System.out.println("pprRank v0.8.9 <- 23/12/22");
+        System.out.println("pprRank v0.9 <- 01/01/23");
 
         //---------------------------------------ONLY USED WHEN TESTING IN DEVELOPMENT--------------------------------
 
@@ -71,9 +72,9 @@ public class DatasetPopulator {
 
     }
 
-    public ModelSummary[] populate(){
+    public Listing[] populate(){
 
-        ArrayList<ModelSummary> datasets = new ArrayList<ModelSummary>();
+        ArrayList<Listing> datasets = new ArrayList<Listing>();
 
         System.out.println("Accessing database...");
 
@@ -81,7 +82,7 @@ public class DatasetPopulator {
 
         System.out.println("Accessing collection...");
         
-        MongoCollection<Document> headphones = database.getCollection("pprRank");
+        MongoCollection<Document> headphones = database.getCollection("preferenceRank");
 
         System.out.println("Retrieving datasets...");
         
@@ -91,7 +92,7 @@ public class DatasetPopulator {
 
         try(MongoCursor<Document> cursor = results.iterator()){
             while(cursor.hasNext()) {
-                datasets.add(new ModelSummary(cursor.next()));
+                datasets.add(new Listing(cursor.next()));
             }
         } catch (Exception e) {
             System.out.println("DatasetPopulator.populate() can't iterate over the returned dataset collection. Exception: " + e);
@@ -99,7 +100,11 @@ public class DatasetPopulator {
 
         System.out.println("Adding datasets to the global resource...");
 
-        ModelSummary[] datasetArr = new ModelSummary[datasets.size()];
+        System.out.println("Sorting datasets...");
+
+        Collections.sort(datasets, Listing.CompareByPprAscending);
+
+        Listing[] datasetArr = new Listing[datasets.size()];
 
         for(int i = 0; i < datasets.size(); i++){
             datasetArr[i] = datasets.get(i);

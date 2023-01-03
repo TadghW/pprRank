@@ -33,7 +33,7 @@ public class DatasetUploader {
         ArrayList<Sample> samples = measurementSorter.bundleToSamples(measurements);
         ArrayList<Model> models = measurementSorter.bundleToModels(samples, measurements);
 
-        System.out.println("Reading environment variables from dotenv...");
+        /*System.out.println("Reading environment variables from dotenv...");
         Dotenv dotenv = Dotenv.configure()
         .directory("src/main/resources")
         .filename("environment.env")
@@ -80,7 +80,7 @@ public class DatasetUploader {
 
         //Upload summaries
         modelSummaries.insertMany(headphoneSummaries);
-
+*/
     }
     
 }

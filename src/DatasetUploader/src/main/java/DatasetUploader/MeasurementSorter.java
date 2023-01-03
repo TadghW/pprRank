@@ -57,9 +57,9 @@ public class MeasurementSorter {
             
             //due to filename standardisation we know that everything between the brand and final 6 characters (L1.txt etc) are the
             //headphone model and variant  
-            String variant = trimmedPathString.substring(trimmedPathString.indexOf("\\") + 1, trimmedPathString.length() - 7);
+            String model = trimmedPathString.substring(trimmedPathString.indexOf("\\") + 1, trimmedPathString.length() - 7);
 
-            String fullName = brand + " " + variant;
+            String fullName = brand + " " + model;
 
             //which means that the first char of that set is the side
             String side = trimmedPathString.substring(trimmedPathString.length() - 6, trimmedPathString.length() - 5);
@@ -113,31 +113,15 @@ public class MeasurementSorter {
                 phase.add(Double.parseDouble(row[2]));
             }
 
-            //Now we have a set of the information we need into our base measurement class
-            Measurement measurement = new Measurement();
-            measurement.setLocation(pathString);
-            measurement.setBrand(brand);
-            measurement.setVariant(variant);
-            measurement.setFullName(fullName);
-            measurement.setSide(side.charAt(0));
-            measurement.setSeating(Integer.parseInt(String.valueOf(seating)));
-            measurement.setOriginalFrequencies(frequencies);
-            measurement.setOriginalMagnitudes(magnitudes);
-            measurement.setOriginalPhase(phase);
-            //Please inspect the measurement to see how the resampling engine and ppr calculation algorithm function
-            measurement.resample();
-            measurement.calculatePpr();
-            //Now we have measurement objects with everything we need
+            //Now we have a set of the information we need into our base measurement class, the measurement class
+            //constructor will resample the data into the format we need
+            Measurement measurement = new Measurement(brand, model, fullName, side, seating, frequencies, magnitudes, phase);
+
             measurements.add(measurement);
         }
         
         return measurements;
     }
-
-    //Although we want measurements saved and accessible, we certainly don't want to pass all that information around for our listing functionality
-    //Plus many measurements are of the model, even measurements of the same cup of the same model! Let's bundle these into unit samples, and then 
-    //into measurements of a single model of headphone across multiple units. From there we can summarise what we know about that headphone 
-    //from the data we've created. 
 
     public ArrayList<Sample> bundleToSamples(ArrayList<Measurement> measurements){
 
@@ -210,7 +194,7 @@ public class MeasurementSorter {
                 
                 //Create a sample with them
                 System.out.println("Packaging unit sample...");
-                Sample sample = new Sample(measurement.getBrand(), measurement.getVariant(), measurement.getFullName(), l1, l2, l3, r1, r2, r3);
+                Sample sample = new Sample(measurement.getBrand(), measurement.getModel(), measurement.getFullName(), l1, l2, l3, r1, r2, r3);
                 System.out.println("Unit set for " + measurement.getFullName() + " created. Calculating ratings...");
                 unitSamples.add(sample);
                 unitsBundled.add(measurement.getFullName());
@@ -316,7 +300,7 @@ public class MeasurementSorter {
         }
 
         //Sort the set by Final Score so we can examine the output from console
-        Collections.sort(models, Model.CompareByFinalScoreAscending);
+        Collections.sort(models, Model.CompareByIdealPprAscending);
         
         for(int i = 0; i < models.size(); i ++){
             System.out.println((models.size() - i) + " : " + models.get(i).toString());
@@ -325,7 +309,7 @@ public class MeasurementSorter {
         System.out.println("Dataset ingest operation successful!\r\n" + models.size() + " headphone variants catalogued using " + measurements.size() +  " measurements.");
 
         for(int i = 0; i < models.size(); i ++){
-            System.out.println((models.size() - i) + " : " + models.get(i).getFullName() + " -> " + models.get(i).getFinalScore());
+            System.out.println((models.size() - i) + " : " + models.get(i).getFullName() + " -> " + models.get(i).getIdealPpr() + " - " + models.get(i).getAveragePpr() + " = " + models.get(i).getPprDiff());
         }
 
         //Return the set

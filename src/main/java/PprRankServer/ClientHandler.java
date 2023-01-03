@@ -42,8 +42,6 @@ public class ClientHandler implements Runnable {
             //Using our string builder we can append these lines into a single string with whatever formatting we want
             String line = br.readLine();
 
-
-
             //We want to stop reading when we've run out of data to read
             while(line != null && !line.isBlank()){
                 request.append(line + "\r\n");
@@ -65,8 +63,8 @@ public class ClientHandler implements Runnable {
 
             ObjectMapper mapper = new ObjectMapper();
 
-            for(ModelSummary model : PprRankServer.headphoneList){
-                responseBody.append(mapper.writeValueAsString(model));
+            for(Listing listing : PprRankServer.headphoneList){
+                responseBody.append(mapper.writeValueAsString(listing));
                 responseBody.append(",");
             }
 

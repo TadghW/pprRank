@@ -1,7 +1,7 @@
 package main.java.pprrankserver;
 
 import main.java.pprrankserver.DatasetPopulator;
-import main.java.pprrankserver.ModelSummary;
+import main.java.pprrankserver.Listing;
 import java.net.ServerSocket;
 import main.java.pprrankserver.ClientHandler; 
 import java.net.Socket;
@@ -17,7 +17,7 @@ class PprRankServer {
 
     private static DatasetPopulator datasetPopulator = new DatasetPopulator();
 
-    protected static ModelSummary[] headphoneList = datasetPopulator.populate();
+    protected static Listing[] headphoneList = datasetPopulator.populate();
 
 
     private static int threadCount = 0;
@@ -28,8 +28,8 @@ class PprRankServer {
 
         try{
             ObjectMapper mapper = new ObjectMapper();
-            for(ModelSummary model : headphoneList){
-                System.out.println(mapper.writeValueAsString(model));
+            for(Listing listing : headphoneList){
+                System.out.println(mapper.writeValueAsString(listing));
             } 
         } catch (Exception e) {
                 System.out.println("uh oh " + e);
