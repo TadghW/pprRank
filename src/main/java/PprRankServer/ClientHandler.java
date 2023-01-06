@@ -6,9 +6,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import main.java.QueryParser;
 import java.util.Date;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
 import main.java.pprrankserver.*; 
@@ -48,31 +47,22 @@ public class ClientHandler implements Runnable {
                 line = br.readLine();
             }
 
-            DateFormat df = new SimpleDateFormat("EEE, MMM d, yyyy HH:mm:ss z");
+            //Now let's figure out what the client has requested
+            String[] requestLines = request.split("\r\n");
+            String[] startingLine = requestLines[0].split(" ");
+            String query = startingLine[1];
+            QueryParser queryParser = new QueryParser();
+            String response = queryParser.parseQuery(query);
 
             //As with the InputStream the OutputStream accepts bytes and nothing else so we have to convert any response we prepare to bytes before sending them through
             OutputStream outputStream = client.getOutputStream();
+            DateFormat df = new SimpleDateFormat("EEE, MMM d, yyyy HH:mm:ss z");
             outputStream.write(("HTTP/1.1 200 OK\r\n").getBytes());
-            outputStream.write((new String("Date: " + df.format(new Date())) + "\r\n").getBytes());
-            outputStream.write(("Access-Control-Allow-Origin: * \r\n").getBytes());
+            outputStream.write(("Access-Control-Allow-Origin: *\r\n").getBytes());
+            outputStream.write(("Connection: Keep-Alive\r\n").getBytes());
             outputStream.write(("Content-Type: application/json\r\n").getBytes());
+            outputStream.write((new String("Date: " + df.format(new Date())) + "\r\n").getBytes());
             outputStream.write(("\r\n").getBytes());
-            outputStream.write(("[").getBytes());
-
-            StringBuilder responseBody = new StringBuilder();
-
-            ObjectMapper mapper = new ObjectMapper();
-
-            for(Listing listing : PprRankServer.headphoneList){
-                responseBody.append(mapper.writeValueAsString(listing));
-                responseBody.append(",");
-            }
-
-            responseBody.delete((responseBody.length() -1), responseBody.length());
-            responseBody.append("]");
-
-            String response = responseBody.toString();
-
             outputStream.write(response.getBytes());
 
             System.out.println("Response issued to " + client.toString() + " by " + threadNo);
