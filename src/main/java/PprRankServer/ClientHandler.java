@@ -6,8 +6,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
-import main.java.QueryParser;
+import main.java.pprrankserver.QueryParser;
 import java.util.Date;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
 import main.java.pprrankserver.*; 
@@ -48,7 +49,7 @@ public class ClientHandler implements Runnable {
             }
 
             //Now let's figure out what the client has requested
-            String[] requestLines = request.split("\r\n");
+            String[] requestLines = request.toString().split("\r\n");
             String[] startingLine = requestLines[0].split(" ");
             String query = startingLine[1];
             QueryParser queryParser = new QueryParser();

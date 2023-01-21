@@ -73,4 +73,85 @@ public class Listing {
     };
 
     
+    public static Comparator<Listing> CompareByPprDescending = new Comparator<Listing>() {
+        public int compare(Listing l1, Listing l2){
+            double l1ppr = l1.getPpr();
+            double l2ppr = l2.getPpr();
+            if(l1ppr > l2ppr){
+                return -1;
+            } else if (l1ppr < l2ppr){
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+    };
+
+    
+    public static Comparator<Listing> CompareByPriceAscending = new Comparator<Listing>() {
+        public int compare(Listing l1, Listing l2){
+            double l1price = l1.getPrice();
+            double l2price = l2.getPrice();
+            if(l1price > l2price){
+                return 1;
+            } else if (l1price < l2price){
+                return -1;
+            } else {
+                return 0;
+            }
+        }
+    };
+
+    
+    public static Comparator<Listing> CompareByPriceDescending = new Comparator<Listing>() {
+        public int compare(Listing l1, Listing l2){
+            double l1price = l1.getPrice();
+            double l2price = l2.getPrice();
+            if(l1price > l2price){
+                return -1;
+            } else if (l1price < l2price){
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+    };
+
+    
+    public static Comparator<Listing> CompareByPprPerEuroAscending = new Comparator<Listing>() {
+        public int compare(Listing l1, Listing l2){
+            double l1ppr = l1.getPpr();
+            double l2ppr = l2.getPpr();
+            double l1price = l1.getPrice();
+            double l2price = l2.getPrice();
+            double l1value = l1ppr / l1price;
+            double l2value = l2ppr / l2price;
+            if(l1value > l2value){
+                return 1;
+            } else if (l1value < l2value){
+                return -1;
+            } else {
+                return 0;
+            }
+        }
+    };
+
+    
+    public static Comparator<Listing> CompareByPprPerEuroDescending = new Comparator<Listing>() {
+        public int compare(Listing l1, Listing l2){
+            double l1ppr = l1.getPpr();
+            double l2ppr = l2.getPpr();
+            double l1price = l1.getPrice();
+            double l2price = l2.getPrice();
+            double l1value = l1ppr / l1price;
+            double l2value = l2ppr / l2price;
+            if(l1value > l2value){
+                return -1;
+            } else if (l1value < l2value){
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+    };
 }
